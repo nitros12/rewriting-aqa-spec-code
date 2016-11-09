@@ -13,16 +13,14 @@ DEBUG = False  # enable debug printing
 
 def generate_fen(board :list=list(), turn :str='W'):
     def format_rank(rank):
-        mylist = list(map(lambda x: x[1].__getattribute__({"B":"lower", "W":"upper"}[x[0]])() if x.isalpha() else x, rank))
-        print(mylist)
-        return mylist
-    
+        return map(lambda x: x[1].__getattribute__({"B":"lower", "W":"upper"}[x[0]])() if x.isalpha() else '', rank)
+
     def collate_rank(rank):
-        string = groupby(format_rank(rank))
-        return str().join(map(lambda k, g: len(g) if k is " " else k, string))
-    print(list(map(collate_rank, board)))
-    return "{}\{}".format('\\'.join(list(map(collate_rank, board))), turn)
-        
+        string = [[k, list(g)] for k,g in groupby(format_rank(rank[1:]))]
+        return str().join(map(lambda x: str(len(x[1])) if not x[0] else str().join(x[1]), string))
+
+    return "{}\{}".format('\\'.join(list(map(collate_rank, board[1:]))), turn)
+
 
 
 def print_name(func):
