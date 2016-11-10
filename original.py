@@ -4,6 +4,7 @@
 # developed in the Python 3.4 programming environment
 
 import sys
+import re
 from itertools import groupby
 
 BOARDDIMENSION = 8
@@ -12,14 +13,66 @@ DEBUG = False  # enable debug printing
 
 
 def generate_fen(board :list=list(), turn :str='W'):
-    def format_rank(rank):
-        return map(lambda x: x[1].__getattribute__({"B":"lower", "W":"upper"}[x[0]])() if x.isalpha() else '', rank)
+    '''formats a board list into a Forsyth–Edwards Notation string, following the spec
+    uses all sorts of black magic to make it work
 
-    def collate_rank(rank):
+    example:
+        (the default board) -> \'genmsneg\\rrrrrrrr\\8\\8\\8\\8\\RRRRRRRR\\GENMSNEG\\W\''''
+    def format_rank(rank :list):
+        '''formats piece string into it's fen version
+
+        example:
+            BG -> g
+            WR -> R
+
+        input:
+            rank: a row from the board'''
+        return map(lambda x: x[1].__getattribute__({"B":"lower", "W":"upper"}[x[0]])() if str(x).isalpha() else None, rank)
+
+    def collate_rank(rank :list):
+        '''minimizes empty cells to their count, formats into a string
+
+        example:
+            ["R"," "," ","g"] -> R2g
+
+        input:
+            rank: formatted list of pieces (from format_rank function)'''
         string = [[k, list(g)] for k,g in groupby(format_rank(rank[1:]))]
         return str().join(map(lambda x: str(len(x[1])) if not x[0] else str().join(x[1]), string))
 
     return "{}\{}".format('\\'.join(list(map(collate_rank, board[1:]))), turn)
+
+def decode_fen(fenStr :str=""):
+    '''decodes a Forsyth–Edwards Notation sting into a 2d array'''
+    def unpack_rank(rank :str):
+        '''unpacks packed fen string into a list
+
+        example:
+            "R4g2" -> ["R"," "," "," "," ","g"," "," "]
+
+        input:
+            rank: packed fen string'''
+        def format(x):
+            return " "*int(x.group())
+        return map(lambda x: x*2 if not x.isalpha() else x, re.sub(re.compile('\d'), format , rank))
+
+    def format_rank(rank :str):
+        '''formats a fen encoded list into a piece string version
+
+        example:
+            g -> BG
+            R -> WR
+
+        input:
+            rank: fen encoded list'''
+        return list(map(lambda x: "{}{}".format("b" if x.islower() else 'W', x).upper() if x.isalpha() else x, rank))
+
+    def fix_list(array :list):
+        return [ ["  " for i in range(BOARDDIMENSION+1)], *list(map(lambda x: ["  "] + x, array))]
+
+    chain_funcs = lambda x: format_rank(unpack_rank(x))
+    fen_list = fenStr.split("\\")
+    return fix_list(map(chain_funcs, fen_list[:-1])), fen_list[-1]
 
 
 
@@ -46,7 +99,7 @@ def expand_arguments(func):
 @print_name
 def CreateBoard():
     '''generate a 2d array of length BOARDDIMENSION+1 and width BOARDDIMENSSION+1'''
-    Board = [[" " for i in range(BOARDDIMENSION + 1)] for j in range(BOARDDIMENSION + 1)]
+    Board = [["  " for i in range(BOARDDIMENSION + 1)] for j in range(BOARDDIMENSION + 1)]
     return Board
 
 
@@ -302,7 +355,23 @@ def MakeMove(Board, StartRank, StartFile, FinishRank, FinishFile, WhoseTurn):
         Board[StartRank][StartFile] = "  "
 
 
+def run_test():
+    myboard = CreateBoard()
+    InitialiseBoard(myboard, "")
+
+    fen = generate_fen(myboard)
+
+    dec, turn = decode_fen(fen)
+
+    assert dec == myboard # confirm that fen decodes correctly
+
+
 if __name__ == "__main__":
+
+
+    run_test()
+
+
     Board = CreateBoard()  # 0th index not used
     StartSquare = 0
     FinishSquare = 0
