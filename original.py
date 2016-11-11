@@ -68,7 +68,16 @@ def decode_fen(fenStr :str=""):
         return list(map(lambda x: "{}{}".format("b" if x.islower() else 'W', x).upper() if x.isalpha() else x, rank))
 
     def fix_list(array :list):
+        '''helper function to format generated list into the type used by the game
+        (empty row on top of board, and each row padded by an empty cell'''
         return [ ["  " for i in range(BOARDDIMENSION+1)], *list(map(lambda x: ["  "] + x, array))]
+
+
+    validate = re.compile("([\w\d]+\\)+[WB]")
+
+    if not re.match(fenStr):
+        return None, None
+        # verify that the fen string is complete
 
     chain_funcs = lambda x: format_rank(unpack_rank(x))
     fen_list = fenStr.split("\\")
