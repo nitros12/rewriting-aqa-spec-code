@@ -1,15 +1,3 @@
-class pieces(object):
-    def __init__(self):
-        self.piece_dict = {}
-        
-    def piece(self, func):
-        def predicate():
-            self.piece_dict[func.__name__] = func
-
-        return predicate
-    return func
-
-
 class vec2d(object):
     def __init__(self, x, y):
         self.x = x
@@ -43,6 +31,9 @@ class piece(object):
         self.name = name
         self.owner = owner
 
+    def test_owner(self, owner):
+        return self.owner == owner
+
     def get_loc(self):
         return self.location
 
@@ -54,23 +45,85 @@ class piece(object):
             return self # return self if at location
 
     def check_self_locations(self, *locations):
-        return not all(map(lambda x: self.location == x, locations))
+        return self.location in locations
 
+    def validate_move(self, board, move):
+        test_piece = board.check_pieces(move.end)
+        if not test_piece:
+            return True # nothing in way, go ahead
+        # grab teams
+        if test_piece.test_owner(move.piece.owner):
+            return False
+            # cannot move onto your own piece
+
+    def test_take(self, board, move):
+        piece = board.check_pieces(move.end)
+        if not piece: return False
+        return take(move.piece, piece)
 
 
 class somepiece(piece):
     def __init__(self, x, y, owner):
         super().__init__(x, y, "somepiece", owner)
+        self.kernel = [
+            vec2d(1,0),
+            vec2d(0,1),
+            vec2d(-1,0),
+            vec2d(0,-1)
+        ]
 
-    def validate_move(self, board):
-        
-        
+    def validate_kernel(self, move):
+        for i in self.kernel:
+            if self.location + i == move.end:
+                return True
+        return False
+
+    def validate_move(self, board, move):
+        # first ensure that moved to valid locations
+        if not self.validate_kernel(move)
+            return False
+            # not in valid location, stop noew
+        super().validate_move(board, move)
+
+
+
+class move(object):
+    def __init__(self, piece :piece, start :vec2d, to :vec2d):
+        self.piece = piece
+        self.start = start
+        self.end = to
+
+class take(object):
+    def __init__(self, capturer :piece, taken :piece):
+        self.capturer = capturer
+        self.taken = taken
+
+class game_state(object):
+    def __init__(self):
+        self.turn = "W"
+        self.white_takes = 0
+        self.black_takes = 0
+        self.turns = 0
+
+    def swap_turn(self):
+        self.turn = {"W":"B", "B":"W"}[self.turn]
+
+    def inc_turns(self):
+        self.turns += 1
+
+    def add_take(self):
+        if self.turn == "W":
+            self.white_takes  += 1
+        else:
+            self.black_takes += 1
+
 
 
 class game_board(object):
     def __init__(self, name :str):
         self.name = name
         self.pieces = []
+        self.state = game_state()
 
     def set_pieces(self, pieces):
         self.pieces = pieces
@@ -79,6 +132,18 @@ class game_board(object):
         self.pieces.append(piece)
 
     def check_pieces(self, location):
-        pieces = filter(lambda x: x.check_self_locations(*locations), self.pieces) 
-        
-        
+        return filter(lambda x: x.check_self_locations(*locations), self.pieces)
+
+    def construct_move(self, start, end):
+        return move(self.check_pieces(start), start, end)
+
+    def runGame(self):
+        start = wait_for_valid("Piece to move (in format: x,y)", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split("''")]))
+        # grab piece
+
+
+def wait_for_valid(question :str, test, formatter = (lambda x: x)):
+    temp = ""
+    while not test(temp):
+        temp = input(question)
+    return formatter(temp)
