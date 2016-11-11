@@ -57,8 +57,11 @@ class piece(object):
             # cannot move onto your own piece
 
     def test_take(self, board, move):
-        piece = board.check_pieces(move.end)
-        if not piece: return False
+        piece = board.check_pieces(move.end) # type: piece
+        if not piece:
+            return False
+        elif piece.check_owner(move.piece.owner):
+            return False
         return take(move.piece, piece)
 
 
@@ -80,18 +83,29 @@ class somepiece(piece):
 
     def validate_move(self, board, move):
         # first ensure that moved to valid locations
-        if not self.validate_kernel(move)
+        if not self.validate_kernel(move):
             return False
             # not in valid location, stop noew
-        super().validate_move(board, move)
+        return super().validate_move(board, move)
 
 
 
 class move(object):
-    def __init__(self, piece :piece, start :vec2d, to :vec2d):
+    def __init__(self, piece :piece, board, start :vec2d, to :vec2d):
         self.piece = piece
+        self.board = board
         self.start = start
         self.end = to
+        self.valid = True
+        self.taken = False
+
+    def __str__(self):
+        return "piece: {0.piece}, board: {0.board}, start: {0.start}, end: {0.end}".format(self)
+
+    def run_validation(self):
+        self.valid = self.piece.validate_move(self.board, self)
+        if self.valid:
+            self.taken = self.piece.test_take(self.board, self)
 
 class take(object):
     def __init__(self, capturer :piece, taken :piece):
@@ -131,16 +145,41 @@ class game_board(object):
     def add_piece(self, piece):
         self.pieces.append(piece)
 
+    def remove_piece(self, piece):
+        self.pieces.remove(piece)
+
     def check_pieces(self, location):
         return filter(lambda x: x.check_self_locations(*locations), self.pieces)
 
-    def construct_move(self, start, end):
-        return move(self.check_pieces(start), start, end)
+    def construct_move(self, piece, start, end):
+        return move(piece, self, start, end)
+
+    def run_take(self, take):
+        print("took piece: {}".format(take.taken))
+        self.state.add_take()
+        self.remove_piece(take.taken)
 
     def runGame(self):
-        start = wait_for_valid("Piece to move (in format: x,y)", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split("''")]))
-        # grab piece
-
+        while True:
+            while True:
+                start = wait_for_valid("Piece to move (in format: x,y)", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split(",")]))
+                # grab piece
+                piece = self.check_pieces(start)
+                if not piece:
+                    print("there was no piece there, please enter a valid piece!")
+                else:
+                    break
+            end = wait_for_valid("Place to move to: (in format x,y)", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split(",")]))
+            movePiece = self.construct_move(piece, start, end)
+            print(movePiece)
+            movePiece.run_validation()
+            if movePiece.valid:
+                break
+            print("move is invalid!") # Todo: give reason
+        if movePiece.taken:
+            self.run_take(movePiece.taken)
+        self.state.inc_turns()
+        self.state.swap_turn()
 
 def wait_for_valid(question :str, test, formatter = (lambda x: x)):
     temp = ""
