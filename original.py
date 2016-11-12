@@ -68,7 +68,16 @@ def decode_fen(fenStr :str=""):
         return list(map(lambda x: "{}{}".format("b" if x.islower() else 'W', x).upper() if x.isalpha() else x, rank))
 
     def fix_list(array :list):
+        '''helper function to format generated list into the type used by the game
+        (empty row on top of board, and each row padded by an empty cell'''
         return [ ["  " for i in range(BOARDDIMENSION+1)], *list(map(lambda x: ["  "] + x, array))]
+
+
+    validate = re.compile(r"([\w\d]+\\)+[WB]")
+
+    if not re.match(validate, fenStr):
+        return None, None
+        # verify that the fen string is complete
 
     chain_funcs = lambda x: format_rank(unpack_rank(x))
     fen_list = fenStr.split("\\")
@@ -91,8 +100,7 @@ def print_name(func):
 
 def expand_arguments(func):
     def callme(*args):
-        args.append(args)
-        return func(*args) #works on my machine
+        return func(*args+args) #works on my machine
     return callme
 
 
@@ -239,7 +247,7 @@ def CheckEtluMoveIsLegal(Board, StartRank, StartFile, FinishRank, FinishFile):
 
 @print_name
 @expand_arguments
-def CheckMoveIsLegal(Board, StartRank, StartFile, FinishRank, FinishFile, WhoseTurn, args):
+def CheckMoveIsLegal(Board, StartRank, StartFile, FinishRank, FinishFile, WhoseTurn, *args):
     '''coordinator for legal move functions'''
     MoveIsLegal = True
     if (FinishFile == StartFile) and (FinishRank == StartRank):
@@ -381,10 +389,16 @@ if __name__ == "__main__":
         GameOver = False
         SampleGame = str()
         while not SampleGame.isalpha():
-            SampleGame = input("Do you want to play the sample game (enter Y for Yes)? ") # type: str
-        SampleGame = SampleGame.upper()
-        InitialiseBoard(Board, SampleGame)
-        Board[1][4] = "WK"
+            SampleGame = input("Do you wish to enter a fen string to start from? (Y/ N)")
+        if SampleGame.lower().startswith("y"):
+            fenStr = input("Please enter the fen string here:\n")
+            Board, WhoseTurn = decode_fen(fenStr)
+        else:
+            SampleGame = str()
+            while not SampleGame.isalpha():
+                SampleGame = input("Do you want to play the sample game (enter Y for Yes)? ") # type: str
+            SampleGame = SampleGame.upper()
+            InitialiseBoard(Board, SampleGame)
         NoOfMoves = 0
         while not(GameOver):
             DisplayBoard(Board)
@@ -410,7 +424,9 @@ if __name__ == "__main__":
 
             if GameOver:
                 DisplayWinner(WhoseTurn)
-            WhoseTurn = {"W":"B","B":"W"}[Whoseturn]
+            WhoseTurn = {"W":"B","B":"W"}[WhoseTurn]
+
+            print("The current fen string is: {}".format(generate_fen(Board, WhoseTurn)))
 
         PlayAgain = str()
         while not PlayAgain.isalpha():

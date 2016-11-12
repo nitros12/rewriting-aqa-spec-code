@@ -1,11 +1,11 @@
-class vec2d(object):
+class Vec2D(object):
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
     def __add__(self, vec):
         try:
-            return vec2d(
+            return Vec2D(
                 self.x + vec.x,
                 self.y + vec.y)
         except:
@@ -13,7 +13,7 @@ class vec2d(object):
 
     def __sub__(self, vec):
         try:
-            return vec2d(
+            return Vec2D(
                 self.x - vec.x,
                 self.y - vec.y)
         except:

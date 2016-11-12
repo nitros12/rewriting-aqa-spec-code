@@ -1,6 +1,7 @@
-from .vec2d import vec2d
+from .vec2d import Vec2D
 
-class move(object):
+
+class Move(object):
     def __init__(self, piece, board, start, end):
         self.piece = piece
         self.board = board
@@ -19,7 +20,8 @@ class move(object):
         if self.valid:
             self.piece.set_loc(self.end)
 
-class game_state(object):
+
+class GameState(object):
     def __init__(self):
         self.turn = "W"
         self.white_takes = 0
@@ -42,14 +44,13 @@ class game_state(object):
             self.black_takes += 1
 
 
-
-class game_board(object):
+class GameBoard(object):
     '''holds game objects
     game is run from here'''
     def __init__(self, name :str):
         self.name = name
         self.pieces = []
-        self.state = game_state()
+        self.state = GameState()
 
     def __str__(self):
         return "Board: (name: {0.name}, state: {0.state}, pieces: {1})".format(self, ', '.join([str(i) for i in self.pieces]))
@@ -77,17 +78,18 @@ class game_board(object):
             return
 
     def construct_move(self, piece, start, end):
-        return move(piece, self, start, end)
+        return Move(piece, self, start, end)
 
     def run_take(self, take):
         print("took piece: {}".format(take.taken))
         self.state.add_take()
         self.remove_piece(take.taken)
 
-    def runGame(self):
+    def run_game(self):
         while True:
             while True:
-                start = wait_for_valid("Piece to move (in format: x,y): ", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split(",")]))
+                start = wait_for_valid("Piece to move (in format: x,y): ", lambda x: len(x.split(",")) == 2,
+                                       lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
                 # grab piece
                 piece = self.find_piece(start)
                 if not piece:
@@ -97,17 +99,19 @@ class game_board(object):
                 else:
                     break
             print("picked piece: {}".format(piece))
-            end = wait_for_valid("Place to move to: (in format x,y): ", lambda x: len(x.split(",")) == 2, lambda x: vec2d(*[int(i.strip()) for i in x.split(",")]))
-            movePiece = self.construct_move(piece, start, end)
-            print(movePiece)
-            if movePiece.valid:
+            end = wait_for_valid("Place to move to: (in format x,y): ", lambda x: len(x.split(",")) == 2,
+                                 lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
+            move_piece = self.construct_move(piece, start, end)
+            print(move_piece)
+            if move_piece.valid:
                 break
-            print("move is invalid!") # Todo: give reason
-        if movePiece.taken:
-            self.run_take(movePiece.taken)
-        movePiece.run_move()
+            print("move is invalid!")  # Todo: give reason
+        if move_piece.taken:
+            self.run_take(move_piece.taken)
+        move_piece.run_move()
         self.state.inc_turns()
         self.state.swap_turn()
+
 
 def wait_for_valid(question :str, test = (lambda x: x), formatter = (lambda x: x)):
     temp = ""

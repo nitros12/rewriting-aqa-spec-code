@@ -1,6 +1,7 @@
-from .vec2d import vec2d
+from .vec2d import Vec2D
 
-class take(object):
+
+class Take(object):
     def __init__(self, capturer, taken):
         self.capturer = capturer
         self.taken = taken
@@ -8,9 +9,10 @@ class take(object):
     def __str__(self):
         return "Take: (capturer: {0.capturer} taking: {0.taken})".format(self)
 
-class piece(object):
+
+class Piece(object):
     def __init__(self, x, y, name, owner):
-        self.location = vec2d(x,y)
+        self.location = Vec2D(x, y)
         self.name = name
         self.owner = owner
 
@@ -47,28 +49,28 @@ class piece(object):
         else:
             # piece is of enemy team
             return True
-
         # return none if fallen out
 
-    def test_take(self, board, move):
-        piece = board.find_piece(move.end) # type: piece
+    @staticmethod
+    def test_take(board, move):
+        piece = board.find_piece(move.end)  # type: Piece
         if not piece:
             print("false at if not piece")
             return False
         elif piece.test_owner(move.piece.owner):
             print("false at test_owner")
             return False
-        return take(move.piece, piece)
+        return Take(move.piece, piece)
 
 
-class somepiece(piece):
+class SomePiece(Piece):
     def __init__(self, x, y, owner):
         super().__init__(x, y, "somepiece", owner)
         self.kernel = [
-            vec2d(1,0),
-            vec2d(0,1),
-            vec2d(-1,0),
-            vec2d(0,-1)
+            Vec2D(1, 0),
+            Vec2D(0, 1),
+            Vec2D(-1, 0),
+            Vec2D(0, -1)
         ]
 
     def validate_kernel(self, move):
@@ -81,5 +83,5 @@ class somepiece(piece):
         # first ensure that moved to valid locations
         if not self.validate_kernel(move):
             return False
-            # not in valid location, stop noew
+            # not in valid location, stop now
         return super().validate_move(board, move)
