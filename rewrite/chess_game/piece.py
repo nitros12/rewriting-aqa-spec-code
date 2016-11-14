@@ -12,7 +12,7 @@ class Take(object):
 
 class Piece(object):
     def __init__(self, x, y, name, owner):
-        self.location = Vec2D(x, y)
+        self._location = Vec2D(x, y)
         self.name = name
         self.owner = owner
 
@@ -22,26 +22,34 @@ class Piece(object):
     def test_owner(self, owner):
         return self.owner == owner
 
-    def get_loc(self):
-        return self.location
+    @property
+    def location(self):
+        return self._location
 
-    def set_loc(self, newloc):
-        self.location = newloc
-
-    def get_loc_xy(self):
-        return self.location.x, self.location.y
+    @location.setter
+    def location(self, xy, y=None):
+        if isinstance(xy, Vec2D):
+            self._location = xy
+        elif isinstance(xy, int) and isinstance(y, int):
+            self._location = Vec2D(xy, y)
+        else:
+            raise Exception("Cannot set location to that!")
 
     def test_location(self, location):
-        if self.location == location:
+        if self._location == location:
             return self # return self if at location
 
     def check_self_locations(self, *locations):
-        return self.location in locations
+        return self._location in locations
 
-    def validate_move(self, board, move):
+    @staticmethod
+    def validate_move(board, move):
+        if board.game_size not in move.end:
+            #  reversed operators because???
+            return False
         test_piece = board.find_piece(move.end)
         if not test_piece:
-            return True # nothing in way, go ahead
+            return True  # nothing in way, go ahead
         # grab teams
         if test_piece.test_owner(move.piece.owner):
             return False
@@ -55,27 +63,24 @@ class Piece(object):
     def test_take(board, move):
         piece = board.find_piece(move.end)  # type: Piece
         if not piece:
-            print("false at if not piece")
+            #  no pieces to take
             return False
         elif piece.test_owner(move.piece.owner):
-            print("false at test_owner")
+            #  piece is on same team
             return False
         return Take(move.piece, piece)
 
 
-class SomePiece(Piece):
-    def __init__(self, x, y, owner):
-        super().__init__(x, y, "somepiece", owner)
-        self.kernel = [
-            Vec2D(1, 0),
-            Vec2D(0, 1),
-            Vec2D(-1, 0),
-            Vec2D(0, -1)
-        ]
+class FixedPiece(Piece):
+    '''A piece that can only move N amount at once
+    (Unlike a chess queen which can move any value of pieces unless blocked'''
+    def __init__(self, x, y, name, owner, kernel):
+        super().__init__(x, y, name, owner)
+        self.kernel = kernel
 
     def validate_kernel(self, move):
         for i in self.kernel:
-            if self.location + i == move.end:
+            if self._location + i == move.end:
                 return True
         return False
 
@@ -85,3 +90,23 @@ class SomePiece(Piece):
             return False
             # not in valid location, stop now
         return super().validate_move(board, move)
+
+
+class King(FixedPiece):
+    '''A king piece'''
+    def __init__(self, x, y, owner):
+        kernel = [
+            Vec2D(1, 0),
+            Vec2D(1, 1),
+            Vec2D(0, 1),
+            Vec2D(-1, 1),
+            Vec2D(-1, 0),
+            Vec2D(-1, -1),
+            Vec2D(0, -1),
+            Vec2D(1, -1)
+            ]
+        super().__init__(x, y, "King", owner, kernel)
+
+
+
+

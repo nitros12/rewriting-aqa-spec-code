@@ -24,3 +24,6 @@ class Vec2D(object):
 
     def __str__(self):
         return "x: {0.x}, y: {0.y}".format(self)
+
+    def __contains__(self, item):
+        return self.x in range(item.x+1) and self.y in range(item.y+1)

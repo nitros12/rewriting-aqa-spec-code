@@ -18,7 +18,7 @@ class Move(object):
 
     def run_move(self):
         if self.valid:
-            self.piece.set_loc(self.end)
+            self.piece.location = self.end
 
 
 class GameState(object):
@@ -47,10 +47,11 @@ class GameState(object):
 class GameBoard(object):
     '''holds game objects
     game is run from here'''
-    def __init__(self, name :str):
+    def __init__(self, name: str, game_size_x, game_size_y):
         self.name = name
         self.pieces = []
         self.state = GameState()
+        self.game_size = Vec2D(game_size_x, game_size_y)
 
     def __str__(self):
         return "Board: (name: {0.name}, state: {0.state}, pieces: {1})".format(self, ', '.join([str(i) for i in self.pieces]))
