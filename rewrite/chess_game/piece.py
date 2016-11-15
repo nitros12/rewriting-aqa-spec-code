@@ -92,6 +92,34 @@ class FixedPiece(Piece):
         return super().validate_move(board, move)
 
 
+class MovePiece(Piece):
+    '''A piece that can move any amount in a given direction,
+    providing it the new position is not blocked by a piece'''
+    def __init__(self, x, y, name, owner, kernel):
+        super().__init__(x, y, name, owner)
+        self.kernel = kernel
+
+    def validate_kernel(self, move):
+        for i in self.kernel:
+            if move.calculate_movement(i):
+                return i
+        return False
+        #  not moving down valid path
+
+    def validate_move(self, board, move):
+        valid_kernel = self.validate_kernel(move)
+        if not valid_kernel:
+            return False
+
+        print("Valid: " + str(valid_kernel))
+
+        for i in range(abs(move.end.x - move.start.x) if valid_kernel.x else abs(move.end.y - self.y)):
+            if board.find_piece(move.start + valid_kernel * Vec2D(i, i)):
+                return False
+
+        return super().validate_move(board, move)
+
+
 class King(FixedPiece):
     '''A king piece'''
     def __init__(self, x, y, owner):
@@ -106,6 +134,17 @@ class King(FixedPiece):
             Vec2D(1, -1)
             ]
         super().__init__(x, y, "King", owner, kernel)
+
+
+class Bishop(MovePiece):
+    def __init__(self, x, y, owner):
+        kernel = [
+                Vec2D(1,1),
+                Vec2D(-1,1),
+                Vec2D(-1,-1),
+                Vec2D(1,-1)
+        ]
+        super().__init__(x, y, "Bishop", owner, kernel)
 
 
 
