@@ -20,13 +20,6 @@ class Move(object):
         if self.valid:
             self.piece.location = self.end
 
-    def calculate_movement(self, multiple):
-       movement = self.end - self.start
-       if not (movement.x and multiple.x) or not (movement.y and multiple.y):
-            return False  # if there should be movement, and there is not
-       return not movement % multiple
-
-
 class GameState(object):
     def __init__(self):
         self.turn = "W"

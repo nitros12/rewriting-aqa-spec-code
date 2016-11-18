@@ -3,6 +3,18 @@ class Vec2D(object):
         self.x = x
         self.y = y
 
+    def isequal(self):
+        return self.x == self.y
+
+    def sign(self):
+        return abs(self)/self
+
+    def test_signs(self, signs):
+        return self.sign() == signs
+
+    def either(self, num):
+        return (self.x == num or self.y == num) and not self.x == self.y
+
     def __add__(self, other):
         try:
             return Vec2D(

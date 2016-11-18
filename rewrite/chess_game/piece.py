@@ -101,21 +101,28 @@ class MovePiece(Piece):
 
     def validate_kernel(self, move):
         for i in self.kernel:
-            if move.calculate_movement(i):
+            if move.test_signs(i):
                 return i
         return False
         #  not moving down valid path
 
     def validate_move(self, board, move):
-        valid_kernel = self.validate_kernel(move)
+        movement = move.end - move.start
+
+        valid_kernel = self.validate_kernel(movement)
         if not valid_kernel:
             return False
 
         print("Valid: " + str(valid_kernel))
 
-        for i in range(abs(move.end.x - move.start.x) if valid_kernel.x else abs(move.end.y - self.y)):
-            if board.find_piece(move.start + valid_kernel * Vec2D(i, i)):
+        for i in range(1, abs(move.end.x - move.start.x)-1 if valid_kernel.x else abs(move.end.y - self.y) -1):
+            # next piece to location before last
+            found_piece = board.find_piece(move.start + valid_kernel * Vec2D(i, i))
+            if found_piece and found_piece is not self:  # if any piece on way on journey, ignore it
+                print("invalid piece = {}".format(found_piece))
                 return False
+
+        print("still valid")
 
         return super().validate_move(board, move)
 
@@ -146,6 +153,43 @@ class Bishop(MovePiece):
         ]
         super().__init__(x, y, "Bishop", owner, kernel)
 
+    def validate_move(self, board, move):
+        movement = move.end - move.start
+        if not abs(movement).isequal():
+            return False
 
+        return super().validate_move(board, move)
 
+class Queen(MovePiece):
+    def __init__(self, x, y, owner):
+        kernel = [
+                Vec2D(1,1),
+                Vec2D(-1,1),
+                Vec2D(-1,-1),
+                Vec2D(1,-1),
+        ]
+        super().__init__(x, y, "Bishop", owner, kernel)
 
+    def validate_move(self, board, move):
+        movement = move.end - move.start # type: Vec2D
+        if not (abs(movement).isequal() or movement.either(0)):
+            return False
+
+        return super().validate_move(board, move)
+
+class Rook(MovePiece):
+    def __init__(self, x, y, owner):
+        kernel = [
+                Vec2D(1,1),
+                Vec2D(-1,1),
+                Vec2D(-1,-1),
+                Vec2D(1,-1)
+        ]
+        super().__init__(x, y, "Bishop", owner, kernel)
+
+    def validate_move(self, board, move):
+        movement = move.end - move.start # type: Vec2D
+        if not movement.either(0):
+            return False
+
+        return super().validate_move(board, move)
