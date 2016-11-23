@@ -42,6 +42,9 @@ class Piece(object):
     def check_self_locations(self, *locations):
         return self._location in locations
 
+    def test_self_type(self, piece_type):
+        return isinstance(self, piece_type)
+
     @staticmethod
     def validate_move(board, move):
         if board.game_size not in move.end:
