@@ -28,15 +28,28 @@ class Move(object):
         self.end = end
 
     def __str__(self):
-        return "Move: (piece: {0.piece}, board: {0.board}, start: {0.start}, end: {0.end} (valid: {0.valid}, take: {0.taken}))".format(self)
+        return "Move: (piece: {0.piece}, board: {0.board}, start: {0.start}, end: {0.end} (valid: {0.valid_bool}, take: {0.taken}))".format(self)
 
     @property
     def valid(self):
         return self.piece.validate_move(self.board, self)
 
     @property
+    def valid_bool(self):
+        """Like move.valid, but designed for when you need boolean output (no exceptions)"""
+        try:
+            return self.piece.validate_move(self.board, self)
+        except:
+            return False
+
+    @property
     def taken(self):
-        return self.piece.test_take(self.board, self) if self.valid else False
+        """returns:
+        chess_game.take if can take validly"""
+        try:
+            return self.piece.test_take(self.board, self) if self.valid else False
+        except Exception as e:
+            return False
 
     def run_move(self):
         if self.valid:
@@ -117,7 +130,7 @@ class GameBoard(object):
     def find_by_owner(self, owner, invert=False):
         return list(filter(lambda x: invert ^ x.test_owner(owner), self.pieces))
         # getting in the cheeky xor operator
-    
+
     def construct_move(self, piece, start, end):
         return Move(piece, self, start, end)
 
@@ -133,8 +146,8 @@ class GameBoard(object):
                 testing_move = self.construct_move(j, piece.location, i.location)
                 if testing_move.valid:
                     windict[j.owner] = True
-                
-        
+
+
 
     def run_game(self):
         '''Run one game move'''
@@ -155,17 +168,29 @@ class GameBoard(object):
                                  lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
             move_piece = self.construct_move(piece, start, end)
             print(move_piece)
-            if move_piece.valid:
-                break
-            print("move is invalid!")  # Todo: give reason
+            try:
+                if move_piece.valid:
+                    break
+            except Exception as e:
+                print(e)
         if move_piece.taken:
             self.run_take(move_piece.taken)
         move_piece.run_move()
         self.state.inc_turns()
         self.state.swap_turn()
 
+    def check_board(self):
+        return True, ''  # Todo: work on this
+
     def game_iter(self):
-        
+        while True:
+            self.run_game()
+            state, msg = self.check_board()
+            if not state:
+                print(msg)
+
+
+
 
 
 def wait_for_valid(question :str, test=(lambda x: x), formatter=(lambda x: x)):

@@ -45,21 +45,25 @@ class Piece(object):
     def test_self_type(self, piece_type):
         return isinstance(self, piece_type)
 
+    @property
+    def allowed_to_take(self):
+        return True
+
     @staticmethod
     def validate_move(board, move):
         if board.game_size not in move.end:
             #  reversed operators because???
-            return False
+            raise Exception("Cannot move out of bounds")
         test_piece = board.find_piece(move.end)
         if not test_piece:
             return True  # nothing in way, go ahead
         # grab teams
-        if test_piece.test_owner(move.piece.owner):
-            return False
+        elif test_piece.test_owner(move.piece.owner):
+            raise Exception("Cannot move onto member of your own team")
             # cannot move onto your own piece
         else:
             # piece is of enemy team
-            return True
+            return test_piece.allowed_to_take
         # return none if fallen out
 
     @staticmethod
@@ -67,10 +71,10 @@ class Piece(object):
         piece = board.find_piece(move.end)  # type: Piece
         if not piece:
             #  no pieces to take
-            return False
+            raise Exception("No piece to take")
         elif piece.test_owner(move.piece.owner):
             #  piece is on same team
-            return False
+            return Exception("Piece to take on same team")
         return Take(move.piece, piece)
 
 
@@ -123,7 +127,7 @@ class MovePiece(Piece):
             found_piece = board.find_piece(move.start + valid_kernel * Vec2D(i, i))
             if found_piece and found_piece is not self:  # if any piece on way on journey, ignore it
                 print("invalid piece = {}".format(found_piece))
-                return False
+                raise Exception("Attempt to jump over another piece")
 
         print("still valid")
 
@@ -144,6 +148,10 @@ class King(FixedPiece):
             Vec2D(1, -1)
             ]
         super().__init__(x, y, "King", owner, kernel)
+
+    @property
+    def allowed_to_take(self):
+        raise Exception("You cannot take the king.")
 
 
 class Bishop(MovePiece):
