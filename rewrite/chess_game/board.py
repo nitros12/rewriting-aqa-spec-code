@@ -62,6 +62,8 @@ class GameState(object):
         self.white_takes = 0
         self.black_takes = 0
         self.turns = 0
+        self.white_check = False
+        self.black_check = False
 
     def __str__(self):
         return "game_state: (Turn: {0.turn}, white_takes: {0.white_takes}, black_takes: {0.black_takes}, Turns completed: {0.turns})".format(self)
@@ -168,11 +170,10 @@ class GameBoard(object):
                                  lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
             move_piece = self.construct_move(piece, start, end)
             print(move_piece)
-            try:
-                if move_piece.valid:
+            if move_piece.valid:
                     break
-            except Exception as e:
-                print(e)
+            elif isinstance(move_piece.valid, piece.GameException):
+                print(move_piece.valid)
         if move_piece.taken:
             self.run_take(move_piece.taken)
         move_piece.run_move()
