@@ -1,6 +1,21 @@
 from .vec2d import Vec2D
 
 
+class GameException(Exception):
+    def __bool__(self):
+        return False  # y tho
+
+
+class KingInCheck(Exception):
+    def __bool__(self):
+        return False
+
+    def __init__(self, taker, king, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.taker = taker
+        self.king = king
+
+
 class Take(object):
     def __init__(self, capturer, taken):
         self.capturer = capturer
@@ -45,25 +60,24 @@ class Piece(object):
     def test_self_type(self, piece_type):
         return isinstance(self, piece_type)
 
-    @property
-    def allowed_to_take(self):
+    def allowed_to_take(self, taker):
         return True
 
     @staticmethod
     def validate_move(board, move):
         if board.game_size not in move.end:
             #  reversed operators because???
-            raise Exception("Cannot move out of bounds")
+            return GameException("Cannot move out of bounds")
         test_piece = board.find_piece(move.end)
         if not test_piece:
             return True  # nothing in way, go ahead
         # grab teams
         elif test_piece.test_owner(move.piece.owner):
-            raise Exception("Cannot move onto member of your own team")
+            return GameException("Cannot move onto member of your own team")
             # cannot move onto your own piece
         else:
             # piece is of enemy team
-            return test_piece.allowed_to_take
+            return test_piece.allowed_to_take(self)
         # return none if fallen out
 
     @staticmethod
@@ -71,10 +85,10 @@ class Piece(object):
         piece = board.find_piece(move.end)  # type: Piece
         if not piece:
             #  no pieces to take
-            raise Exception("No piece to take")
+            return GameException("No piece to take")
         elif piece.test_owner(move.piece.owner):
             #  piece is on same team
-            return Exception("Piece to take on same team")
+            return GameException("Piece to take on same team")
         return Take(move.piece, piece)
 
 
@@ -127,7 +141,7 @@ class MovePiece(Piece):
             found_piece = board.find_piece(move.start + valid_kernel * Vec2D(i, i))
             if found_piece and found_piece is not self:  # if any piece on way on journey, ignore it
                 print("invalid piece = {}".format(found_piece))
-                raise Exception("Attempt to jump over another piece")
+                return GameException("Attempt to jump over another piece")
 
         print("still valid")
 
@@ -149,9 +163,8 @@ class King(FixedPiece):
             ]
         super().__init__(x, y, "King", owner, kernel)
 
-    @property
-    def allowed_to_take(self):
-        raise Exception("You cannot take the king.")
+    def allowed_to_take(self, taker):
+        return KingInCheck(taker, self, "You cannot take the king.")
 
 
 class Bishop(MovePiece):
