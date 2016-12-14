@@ -37,10 +37,7 @@ class Move(object):
     @property
     def valid_bool(self):
         """Like move.valid, but designed for when you need boolean output (no exceptions)"""
-        try:
-            return self.piece.validate_move(self.board, self)
-        except:
-            return False
+        return bool(self.piece.validate_move(self.board, self))
 
     @property
     def taken(self):
