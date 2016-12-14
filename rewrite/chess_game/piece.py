@@ -20,7 +20,7 @@ class KingInCheck:
         self.king = king
 
 
-class Take(object):
+class Take:
     def __init__(self, capturer, taken):
         self.capturer = capturer
         self.taken = taken
@@ -29,7 +29,7 @@ class Take(object):
         return "Take: (capturer: {0.capturer} taking: {0.taken})".format(self)
 
 
-class Piece(object):
+class Piece:
     def __init__(self, x, y, name, owner):
         self._location = Vec2D(x, y)
         self.name = name
@@ -67,8 +67,7 @@ class Piece(object):
     def allowed_to_take(self, taker):
         return True
 
-    @staticmethod
-    def validate_move(board, move):
+    def validate_move(self, board, move):
         if board.game_size not in move.end:
             #  reversed operators because???
             return GameException("Cannot move out of bounds")
@@ -134,13 +133,13 @@ class MovePiece(Piece):
     def validate_move(self, board, move):
         movement = move.end - move.start
 
-        valid_kernel = self.validate_kernel(movement)
+        valid_kernel = self.validate_kernel(movement)  # Type: Vec2D
         if not valid_kernel:
             return False
 
         print("Valid: " + str(valid_kernel))
 
-        for i in range(1, abs(move.end.x - move.start.x)-1 if valid_kernel.x else abs(move.end.y - self.y) -1):
+        for i in range(1, abs(move.end.x - move.start.x)-1):
             # next piece to location before last
             found_piece = board.find_piece(move.start + valid_kernel * Vec2D(i, i))
             if found_piece and found_piece is not self:  # if any piece on way on journey, ignore it

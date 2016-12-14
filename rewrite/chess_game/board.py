@@ -1,7 +1,8 @@
-from .vec2d import Vec2D
 from .piece import *
+from .vec2d import Vec2D
 
-class Move(object):
+
+class Move:
     '''Represents a piece moving from one location to the other
 
     Attributes
@@ -21,10 +22,10 @@ class Move(object):
 
 
     '''
-    def __init__(self, piece, board, start, end):
+    def __init__(self, piece, board, end):
         self.piece = piece
         self.board = board
-        self.start = start
+        self.start = piece.location  # has to start at location of selected piece
         self.end = end
 
     def __str__(self):
@@ -43,16 +44,13 @@ class Move(object):
     def taken(self):
         """returns:
         chess_game.take if can take validly"""
-        try:
-            return self.piece.test_take(self.board, self) if self.valid else False
-        except Exception as e:
-            return False
+        return self.piece.test_take(self.board, self) if self.valid else False
 
     def run_move(self):
         if self.valid:
             self.piece.location = self.end
 
-class GameState(object):
+class GameState:
     '''Stores current game state'''
     def __init__(self):
         self.turn = teams.white
@@ -72,12 +70,12 @@ class GameState(object):
 
     def add_take(self):
         if self.turn == "W":
-            self.white_takes  += 1
+            self.white_takes += 1
         else:
             self.black_takes += 1
 
 
-class GameBoard(object):
+class GameBoard:
     '''holds game objects
     game is run from here
 
@@ -129,8 +127,8 @@ class GameBoard(object):
         return list(filter(lambda x: invert ^ x.test_owner(owner), self.pieces))
         # getting in the cheeky xor operator
 
-    def construct_move(self, piece, start, end):
-        return Move(piece, self, start, end)
+    def construct_move(self, piece, end):
+        return Move(piece, self, end)
 
     def run_take(self, take):
         print("took piece: {}".format(take.taken))
@@ -139,9 +137,9 @@ class GameBoard(object):
 
     def test_win(self):
         windict = {teams.white:False, teams.black:False}
-        for i in self.find_by_type(piece.King):
+        for i in self.find_by_type(King):
             for j in self.find_by_owner(i.owner, invert=True):
-                testing_move = self.construct_move(j, piece.location, i.location)
+                testing_move = self.construct_move(j, i.location)
                 if testing_move.valid:
                     windict[j.owner] = True
 
@@ -153,8 +151,8 @@ class GameBoard(object):
             while True:
                 if not self.state.in_check[self.state.turn]:
                     start = wait_for_valid("Piece to move (in format: x,y): ", lambda x: len(x.split(",")) == 2,
-                                       lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
-                                       # grab piece
+                                           lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
+                                           # grab piece
                     piece = self.find_piece(start)
                 else:
                     piece = self.find_by_type(piece.King)[0]
@@ -168,15 +166,15 @@ class GameBoard(object):
             print("picked piece: {}".format(piece))
             end = wait_for_valid("Place to move to: (in format x,y): ", lambda x: len(x.split(",")) == 2,
                                  lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
-            move_piece = self.construct_move(piece, start, end)
+            move_piece = self.construct_move(piece, end)
             print(move_piece)
             if move_piece.valid:
-                    break
+                break
             elif isinstance(move_piece.valid, piece.GameException):
                 print(move_piece.valid)
             elif isinstance(move_piece.valid, piece.KingInCheck):
                 print("{0.king} King is in check from piece: {0.taker}, {0.king.owner} must move the king their turn!".format(move_piece.valid))
-                self.state.in_check[move_piece.king.owner] = True
+                self.state.in_check[move_piece.valid.king.owner] = True
         if move_piece.taken:
             self.run_take(move_piece.taken)
         move_piece.run_move()
@@ -197,8 +195,8 @@ class GameBoard(object):
 
 
 
-def wait_for_valid(question :str, test=(lambda x: x), formatter=(lambda x: x)):
-    temp = ""
+def wait_for_valid(question: str, test=(lambda x: x), formatter=(lambda x: x)):
+    temp = None
     while not test(temp):
         temp = input(question)
     return formatter(temp)

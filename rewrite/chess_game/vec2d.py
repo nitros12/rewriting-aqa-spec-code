@@ -1,4 +1,4 @@
-class Vec2D(object):
+class Vec2D:
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -86,9 +86,6 @@ class Vec2D(object):
 
     def __ge__(self, other):
         return self.x >= other.x and self.y >= other.y
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
 
     def __abs__(self):
         return Vec2D(abs(self.x), abs(self.y))
