@@ -58,12 +58,11 @@ class Move(object):
 class GameState(object):
     '''Stores current game state'''
     def __init__(self):
-        self.turn = "W"
+        self.turn = teams.white
         self.white_takes = 0
         self.black_takes = 0
         self.turns = 0
-        self.white_check = False
-        self.black_check = False
+        self.in_check = {teams.white:False, teams.black:False}
 
     def __str__(self):
         return "game_state: (Turn: {0.turn}, white_takes: {0.white_takes}, black_takes: {0.black_takes}, Turns completed: {0.turns})".format(self)
@@ -142,7 +141,7 @@ class GameBoard(object):
         self.remove_piece(take.taken)
 
     def test_win(self):
-        windict = {"W":False, "B":False}
+        windict = {teams.white:False, teams.black:False}
         for i in self.find_by_type(piece.King):
             for j in self.find_by_owner(i.owner, invert=True):
                 testing_move = self.construct_move(j, piece.location, i.location)
@@ -155,10 +154,14 @@ class GameBoard(object):
         '''Run one game move'''
         while True:
             while True:
-                start = wait_for_valid("Piece to move (in format: x,y): ", lambda x: len(x.split(",")) == 2,
+                if not self.state.in_check[self.state.turn]:
+                    start = wait_for_valid("Piece to move (in format: x,y): ", lambda x: len(x.split(",")) == 2,
                                        lambda x: Vec2D(*[int(i.strip()) for i in x.split(",")]))
-                # grab piece
-                piece = self.find_piece(start)
+                                       # grab piece
+                    piece = self.find_piece(start)
+                else:
+                    piece = self.find_by_type(piece.King)[0]
+                    print("{} is in check, so their king at {} was automatically selected".format(piece.owner, piece.location))
                 if not piece:
                     print("there was no piece there, please enter a valid piece!")
                 elif not piece.test_owner(self.state.turn):
@@ -174,6 +177,9 @@ class GameBoard(object):
                     break
             elif isinstance(move_piece.valid, piece.GameException):
                 print(move_piece.valid)
+            elif isinstance(move_piece.valid, piece.KingInCheck):
+                print("{0.king} King is in check from piece: {0.taker}, {0.king.owner} must move the king their turn!".format(move_piece.valid))
+                self.state.in_check[move_piece.king.owner] = True
         if move_piece.taken:
             self.run_take(move_piece.taken)
         move_piece.run_move()

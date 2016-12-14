@@ -1,12 +1,16 @@
 from .vec2d import Vec2D
+from enum import Enum
 
+class teams(Enum):
+    white = "W"
+    black = "B"
 
-class GameException(Exception):
+class GameException:
     def __bool__(self):
         return False  # y tho
 
 
-class KingInCheck(Exception):
+class KingInCheck:
     def __bool__(self):
         return False
 
@@ -35,7 +39,7 @@ class Piece(object):
         return "Piece: (owner: {0.owner}, type: {0.name} in position {0.location})".format(self)
 
     def test_owner(self, owner):
-        return self.owner == owner
+        return self.owner is owner
 
     @property
     def location(self):
